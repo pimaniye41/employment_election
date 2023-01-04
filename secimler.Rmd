@@ -1,0 +1,213 @@
+---
+title: "Secim_sonuclari"
+output: html_notebook
+---
+
+#2019 buyuksehir
+```{r}
+library(readxl)
+Buyuksehir_2019 <- read_excel("eco2063/Buyuksehir_2019.xlsx", 
+    skip = 10)
+View(Buyuksehir_2019)
+
+d_Buyuksehir_2019 <- Buyuksehir_2019 %>%
+    pivot_longer(3:17, names_to = "Parti", values_to = "Oy")%>%
+    filter(!Parti %in% c("Kayıtlı Seçmen Sayısı", "Toplam Geçersiz Oy"))
+
+colnames(d_Buyuksehir_2019) <- c("il_no", "il", "parti", "oy")
+
+d_Buyuksehir_2019$il <- str_to_title(d_Buyuksehir_2019$il)
+
+exxample <- d_Buyuksehir_2019 %>%
+    group_by(il)%>%
+    top_n(3)%>%
+    group_by(il)%>%
+    arrange(il,desc(oy))
+```
+
+#2019 buyuksehir duzeltme
+```{r}
+exxample$rank <- rep(c("toplam", "birinci","ikinci"),30)
+str(exxample)
+
+as.data.frame(exxample)
+exxample
+
+exxample <- pivot_wider(exxample, id_cols = c("il_no", "il"), names_from = c("rank"), values_from = c("parti", "oy"))
+exxample <- exxample[c(1,2,3,6,4,7,5,8)]
+
+exxample <-  exxample %>%
+    mutate(oy_kazanan_oran = (100*(oy_birinci)/(oy_toplam)),
+           oy_ikinci_oran = (100*(oy_ikinci)/(oy_toplam)))
+
+exxample1 <- exxample[,c(1,2,3,4,5,6,9,7,8,10)]
+
+buyuksehir_2019_1_2 <- exxample1
+buyuksehir_2019_1_2 <- buyuksehir_2019_1_2[,-1]
+buyuksehir_2019_1_2$yil <- rep(2019,30)
+View(buyuksehir_2019_1_2)
+
+```
+
+#ibb yenilenen secim duzenleme
+```{r}
+library(readxl)
+ibb_yenileem <- read_excel("D:/R Studio Projects/eco2063/ibb_yenileem.xlsx", 
+    skip = 10)
+ibb_yenileem <- ibb_yenileem[,c(1,2,7,9:13)]
+
+ibb_yenileem <- ibb_yenileem %>%
+    pivot_longer(3:8, names_to = "Parti", values_to = "Oy")
+colnames(ibb_yenileem) <- c("il_no", "il","parti","oy")
+ibb_yenilenen <- ibb_yenileem%>%
+    top_n(3)%>%
+    group_by(il)%>%
+    arrange(il,desc(oy))
+
+ibb_yenilenen$rank <- c("toplam","birinci","ikinci")
+ibb_yenilenen <- pivot_wider(ibb_yenilenen, id_cols = c("il_no","il"), names_from = c("rank"), values_from = c("parti","oy"))
+
+ibb_yenilenen$il <- str_to_title(ibb_yenilenen$il)
+ibb_yenilenen <- ibb_yenilenen[,c(1,2,3,6,4,7,5,8)]
+
+ibb_yenilenen <- ibb_yenilenen %>%
+    mutate(oy_kazanan_oran = (100*oy_birinci)/(oy_toplam),
+           oy_ikinci_oran = (100*oy_ikinci)/(oy_toplam))
+
+ibb_yenilenen <- ibb_yenilenen[,c(1,2,3,4,5,6,9,7,8,10)]
+ibb_yenilenen1 <- ibb_yenilenen[,-1]
+
+ibb_yenilenen_1_2 <- ibb_yenilenen1
+
+deneme <- buyuksehir_2019_1_2
+
+deneme[13,] <- ibb_yenilenen_1_2
+
+buyuksehir_2019_1_2 <- deneme
+
+buyuksehir_2019_1_2$yil <- rep(2019,30)
+buyuksehir_2019_1_2
+
+
+```
+
+#2014 buyuksehir secim
+```{r}
+library(readxl)
+Buyuksehir_2014 <- read_excel("Buyuksehir_2014.xlsx", 
+    skip = 10)
+Buyuksehir_2014
+View(Buyuksehir_2014)
+
+d_Buyuksehir_2014 <- Buyuksehir_2014 %>%
+    pivot_longer(3:30, names_to = "Parti", values_to = "Oy")%>%
+    filter(!Parti %in% c("Kayıtlı Seçmen Sayısı", "Toplam Geçersiz Oy", "Oy Kullanan Seçmen Sayısı","İtirazsız Geçerli Oy Sayısı"))
+
+colnames(d_Buyuksehir_2014) <- c("il_no", "il", "parti", "oy")
+
+d_Buyuksehir_2014$il <- str_to_title(d_Buyuksehir_2014$il)
+d_Buyuksehir_2014
+
+d_Buyuksehir_2014 <- exxample <- d_Buyuksehir_2014 %>%
+    group_by(il)%>%
+    top_n(3)%>%
+    group_by(il)%>%
+    arrange(il,desc(oy))
+
+d_Buyuksehir_2014
+
+d_Buyuksehir_2014$rank <- rep(c("toplam", "birinci","ikinci"),30)
+
+d_Buyuksehir_2014 <- pivot_wider(d_Buyuksehir_2014, id_cols = c("il_no", "il"), names_from = c("rank"), values_from = c("parti", "oy"))
+
+d_Buyuksehir_2014 <- d_Buyuksehir_2014[c(1,2,3,6,4,7,5,8)]
+
+d_Buyuksehir_2014 <-  d_Buyuksehir_2014 %>%
+    mutate(oy_kazanan_oran = (100*(oy_birinci)/(oy_toplam)),
+           oy_ikinci_oran = (100*(oy_ikinci)/(oy_toplam)))
+d_Buyuksehir_2014 <- d_Buyuksehir_2014[,c(1,2,3,4,5,6,9,7,8,10)]
+
+buyuksehir_2014_1_2 <- d_Buyuksehir_2014
+buyuksehir_2014_1_2 <- buyuksehir_2014_1_2[,-1]
+buyuksehir_2014_1_2$yil <- rep(2014,30)
+```
+
+#2014-2019 buyuksehir birlestirme
+```{r}
+colnames(buyuksehir_2014_1_2) <- c("il",
+                                   "parti_toplam",
+                                   "2014_oy_toplam",
+                                   "2014_parti_birinci",
+                                   "2014_oy_birinci",
+                                   "2014_oy_kazanan_oran",
+                                   "2014_parti_ikinci",
+                                   "2014_oy_ikinci",
+                                   "2014_oy_ikinci_oran",
+                                   "yil")
+
+colnames(buyuksehir_2019_1_2) <- c("il",
+                                   "parti_toplam",
+                                   "2019_oy_toplam",
+                                   "2019_parti_birinci",
+                                   "2019_oy_birinci",
+                                   "2019_oy_kazanan_oran",
+                                   "2019_parti_ikinci",
+                                   "2019_oy_ikinci",
+                                   "2019_oy_ikinci_oran"
+                                 )
+
+buyuksehir_2014_1_2 <- buyuksehir_2014_1_2[,c(10,1:9)]
+buyuksehir_2019_1_2 <- buyuksehir_2019_1_2[,c(10,1:9)]
+
+buyuksehir_2014_1_2 <- as.data.frame(buyuksehir_2014_1_2)
+buyuksehir_2019_1_2 <- as.data.frame(buyuksehir_2019_1_2)
+
+buyuksehir_2014_1_2
+buyuksehir_2019_1_2
+
+buyuksehir_2019_1_2 <- buyuksehir_2019_1_2 %>%
+    mutate(kazanan_ittifak_2019 = if_else(`2019_parti_birinci`%in% c("MHP", "AK PARTİ"),"CUMHUR",
+                                  ifelse(`2019_parti_birinci` %in% c("CHP","İYİ PARTİ","SAADET"),"MİLLET",`2019_parti_birinci`)))
+
+buyuksehir_2019_1_2 <- buyuksehir_2019_1_2[,c(1,2,3,4,11,c(5:10))]
+
+buyuksehir_2019_1_2 <- buyuksehir_2019_1_2 %>%
+    mutate(kazanan_ittifak_2019 = if_else(`2019_parti_birinci`%in% c("MHP", "AK PARTİ"),"CUMHUR",
+                                  ifelse(`2019_parti_birinci` %in% c("CHP","İYİ PARTİ","SAADET"),"MİLLET",`2019_parti_birinci`)))
+
+
+buyuksehir_2014_1_2[21,]$`2014_parti_birinci`<- "BAĞIMSIZ AHMET TÜRK"
+
+buyuksehir_2014_1_2 <-  buyuksehir_2014_1_2 %>%
+    mutate(kazanan_ittifak_2014 = if_else(`2014_parti_birinci`%in% c("MHP", "AK PARTİ"),"CUMHUR",
+                                  ifelse(`2014_parti_birinci` %in% c("CHP","İYİ PARTİ","SAADET"),"MİLLET",`2014_parti_birinci`)))
+
+merge_Deneme <- merge(buyuksehir_2014_1_2,buyuksehir_2019_1_2, by = c("il","parti_toplam"))
+merge_Deneme <- merge_Deneme[,c(1,2,4,5,6,7:11,13:20)]
+merge_Deneme <- merge_Deneme[,c(1,2,3,10,4:9,11:18)]
+
+buyuksehir_2019_vs_2014 <- merge_Deneme 
+
+
+buyuksehir_2019_vs_2014_ittifak <- buyuksehir_2019_vs_2014 %>%
+    mutate(degisim = if_else(kazanan_ittifak_2014 != kazanan_ittifak_2019, "ittifak_degisim","ittifak_ayni"))
+
+buyuksehir_2019_vs_2014_ittifak <- buyuksehir_2019_vs_2014_ittifak[,c(1,2,3,10,4:9,11:19)]
+buyuksehir_2019_vs_2014_ittifak$parti_toplam <- NULL
+
+buyuksehir_2019_vs_2014_ittifak <- buyuksehir_2019_vs_2014_ittifak%>%
+    mutate(parti_degisim = if_else(`2014_parti_birinci` != `2019_parti_birinci`, "parti_degisim","parti_ayni"))
+
+buyuksehir_2019_vs_2014_ittifak%>%
+    mutate()
+
+write_xlsx(buyuksehir_2019_vs_2014_ittifak,path = "D:/R Studio Projects/eco2063/buyuksehirler/2014_2019_degisim_2.xlsx")
+
+```
+
+
+
+
+
+
+

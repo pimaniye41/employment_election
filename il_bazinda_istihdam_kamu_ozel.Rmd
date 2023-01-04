@@ -1,0 +1,312 @@
+---
+title: "İllere göre istihdamdaki özel-kamu ayrımı"
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library("readxl")
+library("tidyverse")
+sgk_kayitlilar_2009_2018 <- read_excel("D:/R Studio Projects/eco2063/sgk_kayitlilar.xlsx", 
+    sheet = "2009-2018")
+
+sgk_kayitlilar_2019_2022 <- read_excel("D:/R Studio Projects/eco2063/sgk_kayitlilar.xlsx", 
+    sheet = "2019-2022")
+
+View(sgk_kayitlilar_2009_2018)
+View(sgk_kayitlilar_2019_2022)
+
+sgk_kayitlilar_2009_2018 <- sgk_kayitlilar_2009_2018[,c(-1,-3)]
+sgk_kayitlilar_2019_2022 <- sgk_kayitlilar_2019_2022[,c(-1,-3)]
+```
+
+#uzun veri
+```{r}
+sgk_kayitlilar_2019_2022 <- sgk_kayitlilar_2019_2022 %>%
+    pivot_longer(3:46, names_to = "Yillar", values_to = "Calisan")
+
+sgk_kayitlilar_2019_2022 <- sgk_kayitlilar_2019_2022 %>%
+    filter(Yillar == "2022.08" | str_ends(Yillar, "12"))
+
+sgk_kayitlilar_2009_2018 <- sgk_kayitlilar_2009_2018 |>
+    pivot_longer(3:12, names_to = "Yillar", values_to = "Calisan")
+```
+
+#yillari nümerik yapma
+
+```{r}
+str(sgk_kayitlilar_2019_2022)
+sgk_kayitlilar_2019_2022$Yillar <- as.numeric((sgk_kayitlilar_2019_2022$Yillar))
+sgk_kayitlilar_2019_2022$Yillar <- floor(sgk_kayitlilar_2019_2022$Yillar)
+
+colnames(sgk_kayitlilar_2019_2022) <- c("Gosterge", "Sehir", "Yillar", "Calisan")
+colnames(sgk_kayitlilar_2009_2018) <- c("Gosterge", "Sehir", "Yillar", "Calisan")
+
+sgk_kayitlilar_2009_2018$Yillar <- as.numeric(sgk_kayitlilar_2009_2018$Yillar)
+
+
+str(sgk_kayitlilar_2019_2022)
+str(sgk_kayitlilar_2009_2018)
+```
+
+#aylik verileri yilliga cevirme2
+
+```{r}
+
+sgk_kayitlilar_2019_2022 <- as.data.frame(sgk_kayitlilar_2019_2022)
+sgk_kayitlilar_2009_2018 <- as.data.frame(sgk_kayitlilar_2009_2018)
+
+str(sgk_kayitlilar_2019_2022)
+str(sgk_kayitlilar_2009_2018)
+df <- bind_rows(sgk_kayitlilar_2009_2018,sgk_kayitlilar_2019_2022)
+```
+
+
+```{r}
+View(df)
+#df <- arrange(df, Sehir)
+#df
+library("writexl")
+write_xlsx(df, path = "D:/R Studio Projects/eco2063/sgk_kamu_ozel_son2.xlsx")
+```
+
+
+```{r}
+Turkiye_toplam <- df %>%
+    group_by(Gosterge,Yillar) %>%
+    summarise(Calisan = sum(Calisan))
+kamu_calisan <- df %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı")
+ozel_calisan <- df %>%
+    filter(Gosterge %in% "SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı")
+toplam_calisan <- df %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)")
+```
+
+
+
+#turkiye toplam timeseries ve barplot
+```{r}
+ggplot(Turkiye_toplam)+
+    geom_line(aes(x = Yillar, y = (Calisan)/100000, color = Gosterge))+
+    labs(title = "2009-2022 kamu-özel istihdam ayrımı",
+         subtitle = "2022 verisi 8. aya kadardır")
+
+ggplot(Turkiye_toplam)+
+    geom_bar(aes(x = Yillar, y = (Calisan)/100000, fill = Gosterge),stat = "identity", position = "dodge")+
+    labs(title = "2009-2022 kamu-özel istihdam ayrımı",
+         subtitle = "2022 verisi 8. aya kadardır")
+```
+
+
+#bolgeleri ekleme
+```{r}
+bolgeler <- read_excel("D:/R Studio Projects/eco2063/bolgeler.xlsx")
+bolgeler
+
+ddf <- df
+ddf <- df %>%
+    inner_join(bolgeler, by = "Sehir")
+
+ddf$Yillar2 <- paste(ddf$Yillar, "-01-01", sep = "")
+str(ddf$Yillar2)
+ddf$Yillar2 <- as.Date(ddf$Yillar2)
+
+ddf <- ddf[,c(1,5,6,2,3,7,4)]
+View(ddf)
+```
+
+gruplama
+```{r}
+tr_toplam_ortalama_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)")%>%
+    group_by(Yillar2, Bolge)%>%
+    summarise(Ortalama = mean(Calisan),
+              Sapma = sd(Calisan),
+              Sektor = "Toplam")%>%
+    arrange(Bolge,Yillar2)
+
+tr_ozel_ortalama_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı")%>%
+    group_by(Yillar2,Bolge)%>%
+    summarise(Ortalama = mean(Calisan),
+              Sapma = sd(Calisan),
+              Sektor = "Ozel")%>%
+    arrange(Bolge,Yillar2)
+
+tr_kamu_ortalama_sd  <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı")%>%
+    group_by(Yillar2, Bolge)%>%
+    summarise(Ortalama = mean(Calisan),
+              Sapma = sd(Calisan),
+              Sektor = "Kamu")%>%
+    arrange(Bolge,Yillar2)
+
+#--------#
+
+ozel_dogu_ort_sd <- ddf %>%
+    filter(Gosterge %in%"SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Kuzeydoğu Anadolu","Güneydoğu Anadolu", "Ortadoğu Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Ozel")
+
+kamu_dogu_ort_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Kuzeydoğu Anadolu","Güneydoğu Anadolu", "Ortadoğu Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Kamu")
+
+
+top_dogu_ort_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)" & Bolge %in% c("Kuzeydoğu Anadolu","Güneydoğu Anadolu", "Ortadoğu Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Toplam")
+#-----------#
+
+ozel_guneysahil_ort_sd <- ddf %>%
+     filter(Gosterge %in%"SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Akdeniz", "Ege"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Ozel")
+
+kamu_guneysahil_ort_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Akdeniz","Ege"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Kamu")
+
+top_guneysahil_ort_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)" & Bolge %in% c("Akdeniz","Ege"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Toplam")
+
+#--------------#
+
+ozel_marmara_ort_sd <- ddf %>%
+     filter(Gosterge %in%"SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("İstanbul", "Batı Marmara", "Doğu Marmara"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Ozel")
+
+kamu_marmara_ort_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("İstanbul", "Batı Marmara", "Doğu Marmara"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Kamu")
+
+top_marmara_ort_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)" & Bolge %in% c("İstanbul", "Batı Marmara", "Doğu Marmara"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Toplam")
+
+#--------#
+
+ozel_karadeniz_ort_sd <- ddf %>%
+     filter(Gosterge %in%"SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Batı Karadeniz", "Doğu Karadeniz"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Ozel")
+
+kamu_karadeniz_ort_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Batı Karadeniz", "Doğu Karadeniz"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Kamu")
+
+top_karadeniz_ort_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)" & Bolge %in% c("Batı Karadeniz", "Doğu Karadeniz"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Toplam")
+
+#---------#
+
+ozel_icanadolu_ort_sd <- ddf %>%
+     filter(Gosterge %in%"SGK, Özel İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Batı Anadolu", "Orta Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Ozel")
+
+kamu_icanadolu_ort_sd <- ddf %>%
+    filter(Gosterge %in% "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı" & Bolge %in% c("Batı Anadolu", "Orta Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Kamu")
+
+top_icanadolu_ort_sd <- ddf %>%
+    filter(Gosterge %in% "Sigortalı, Aktif, Zorunlu Sigortalı (4a)" & Bolge %in% c("Batı Anadolu", "Orta Anadolu"))%>%
+    group_by(Alt_Bolge,Yillar2)%>%
+    summarise(bolgesel_yillik_ortalama = mean(Calisan),
+              bolgesel_yillik_sapma = sd(Calisan),
+              Sektor = "Toplam")
+```
+
+#grafikleme
+
+```{r}
+tr_toplam_ortalama_sd
+tr_kamu_ortalama_sd
+tr_ozel_ortalama_sd
+
+
+
+#------#
+ozel_dogu_ort_sd
+kamu_dogu_ort_sd
+top_dogu_ort_sd
+
+#ozel_guneysahil_ort_sd
+ggplot(ozel_guneysahil_ort_sd)+
+    geom_line(aes(x = Yillar2, y = bolgesel_yillik_sapma, group = Alt_Bolge, color = Alt_Bolge ))+
+    geom_smooth(aes(x = Yillar2, y = bolgesel_yillik_sapma, group = Alt_Bolge, color = Alt_Bolge), se = F, method = "lm")+
+    theme_minimal()+
+    facet_wrap(~Alt_Bolge, scales = "free")+
+    labs(title = "Güney Sahil Alt Bölgeleri, Yıllık Şehirler Arası Çalışan Standart Sapması",
+         subtitle = "Özel Sektör")
+    
+kamu_guneysahil_ort_sd
+#
+
+top_guneysahil_ort_sd
+
+ozel_marmara_ort_sd
+kamu_marmara_ort_sd
+top_marmara_ort_sd
+
+ozel_karadeniz_ort_sd
+kamu_karadeniz_ort_sd
+top_karadeniz_ort_sd
+
+ozel_icanadolu_ort_sd
+kamu_icanadolu_ort_sd
+top_icanadolu_ort_sd
+
+
+write_xlsx(ozel_guneysahil_ort_sd,path = "D:/R Studio Projects/eco2063/ozelguneysahil.xlsx")
+```
+
+```{r}
+
+```
+
