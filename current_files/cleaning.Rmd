@@ -1,0 +1,40 @@
+# Verileri düzenleme
+
+# paketler
+```{r,message=FALSE}
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(TRmaps)
+```
+
+# sigortali verisi
+```{r}
+sigortali <- read_excel(path = "data/kamu_toplam_sigortali.xlsx")
+mv_27 <- read_excel(path = "data/Yurt_ici_27.donem.xlsx")
+mv_26 <- read_excel(path = "data/Yurt_ici_26.donem.xlsx")
+```
+
+# sigorta verisi düzenleme
+```{r}
+sigortali <- pivot_longer(sigortali,cols = 3:16,names_to = "Sene",values_to = "Sigortali")
+
+colnames(sigortali) <- janitor::make_clean_names(colnames(sigortali))
+
+sigortali$gosterge[sigortali$gosterge == "Sigortalı, Aktif, Zorunlu Sigortalı (4a)"] <- "4A Toplam Zorunlu Sigortalı"
+sigortali$gosterge[sigortali$gosterge ==  "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı"] <- "Kamu Zorunlu Sigortalı"
+sene_levels <- unique(sigortali$sene)
+```
+
+# mv seçim verisi düzenleme
+```{r}
+mv_27 <- mv_27 %>% 
+  pivot_longer(3:13,names_to = "Parti",values_to = "Oy_2018")
+colnames(mv_27) <- make_clean_names(colnames(mv_27))
+
+mv_26 <- mv_26 %>% 
+  pivot_longer(3:19, names_to = "parti", values_to = "oy_2015")
+colnames(mv_26) <- make_clean_names(colnames(mv_26))
+```
+
+

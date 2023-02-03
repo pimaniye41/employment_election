@@ -1,0 +1,26 @@
+---
+title: "summary_tables"
+output: html_document
+date: "`r Sys.Date()`"
+---
+# kazanan ve ikinci tablolari
+```{r}
+mv_26_1_2 <- mv_26 %>% 
+  group_by(il_adi) %>%  
+  arrange(il_adi,desc(oy_2015)) %>%  
+  summarise(cogunluk_parti_2015 = parti[which.max(oy_2015)],
+            cogunluk_parti_oran_2015 = max(oy_2015)/sum(oy_2015),
+            iktidar = ifelse(cogunluk_parti_2015 %in% "AK PARTİ",1,0),
+            ikinci_parti_2015 = parti[2],
+            ikinci_parti_oran_2015 = nth(oy_2015,2,order_by=desc(oy_2015))/sum(oy_2015))
+
+mv_27_1_2 <- mv_27 %>% 
+  group_by(il_adi) %>%  
+  arrange(il_adi,desc(oy_2018)) %>%  
+  summarise(cogunluk_parti_2018 = parti[which.max(oy_2018)],
+            cogunluk_parti_oran_2018 = max(oy_2018)/sum(oy_2018),
+            iktidar = ifelse(cogunluk_parti_2018 %in% "AK PARTİ",1,0),
+            ikinci_parti_2018 = parti[2],
+            ikinci_parti_oran_2018 = nth(oy_2018,2,order_by=desc(oy_2018))/sum(oy_2018))
+```
+
