@@ -23,6 +23,8 @@ colnames(sigortali) <- janitor::make_clean_names(colnames(sigortali))
 
 sigortali$gosterge[sigortali$gosterge == "Sigortalı, Aktif, Zorunlu Sigortalı (4a)"] <- "4A Toplam Zorunlu Sigortalı"
 sigortali$gosterge[sigortali$gosterge ==  "SGK, Kamu İş Yerlerindeki Zorunlu Sigortalı Sayısı"] <- "Kamu Zorunlu Sigortalı"
+sigortali <-sigortali %>% 
+  rename(il_adi = sehir)
 sene_levels <- unique(sigortali$sene)
 ```
 

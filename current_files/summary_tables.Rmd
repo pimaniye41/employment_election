@@ -10,7 +10,7 @@ mv_26_1_2 <- mv_26 %>%
   arrange(il_adi,desc(oy_2015)) %>%  
   summarise(cogunluk_parti_2015 = parti[which.max(oy_2015)],
             cogunluk_parti_oran_2015 = max(oy_2015)/sum(oy_2015),
-            iktidar = ifelse(cogunluk_parti_2015 %in% "AK PARTİ",1,0),
+            iktidar_2015 = ifelse(cogunluk_parti_2015 %in% "AK PARTİ",1,0),
             ikinci_parti_2015 = parti[2],
             ikinci_parti_oran_2015 = nth(oy_2015,2,order_by=desc(oy_2015))/sum(oy_2015))
 
@@ -19,8 +19,32 @@ mv_27_1_2 <- mv_27 %>%
   arrange(il_adi,desc(oy_2018)) %>%  
   summarise(cogunluk_parti_2018 = parti[which.max(oy_2018)],
             cogunluk_parti_oran_2018 = max(oy_2018)/sum(oy_2018),
-            iktidar = ifelse(cogunluk_parti_2018 %in% "AK PARTİ",1,0),
+            iktidar_2018 = ifelse(cogunluk_parti_2018 %in% "AK PARTİ",1,0),
             ikinci_parti_2018 = parti[2],
             ikinci_parti_oran_2018 = nth(oy_2018,2,order_by=desc(oy_2018))/sum(oy_2018))
+
+mv_26_27 <- full_join(mv_26_1_2,mv_27_1_2)
+mv_26_27$il_adi <- str_to_title(mv_26_27$il_adi,locale = "tr_TR")
+```
+
+# kamu sigortalilar mv seçimleri zamanı degisimleri
+```{r}
+sigortali_15_18 <- sigortali %>% 
+  filter(sene %in% c(2014:2015,2017:2018) & gosterge == "Kamu Zorunlu Sigortalı") %>% 
+  pivot_wider(id_cols = il_adi,names_from = c(sene,gosterge),values_from = sigortali)
+colnames(sigortali_15_18) <- make_clean_names(colnames(sigortali_15_18))
+
+sigortali_15_18 <- sigortali_15_18%>% 
+  mutate(s_degisim14_15 = (x2015_kamu_zorunlu_sigortali-x2014_kamu_zorunlu_sigortali)/
+           x2014_kamu_zorunlu_sigortali,
+         s_degisim17_18 = (x2018_kamu_zorunlu_sigortali - x2017_kamu_zorunlu_sigortali)/ x2017_kamu_zorunlu_sigortali)
+
+sigortali_15_18 <- sigortali_15_18 %>% 
+  select(1,2,3,6,4,5,7)
+```
+
+# birlestirme
+```{r}
+sigorta_mv <- full_join(mv_26_27,sigortali_15_18)
 ```
 
