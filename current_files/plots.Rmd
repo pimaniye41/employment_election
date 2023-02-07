@@ -1,0 +1,44 @@
+---
+title: "plots"
+output: html_document
+date: "`r Sys.Date()`"
+---
+# packages
+```{r}
+library(tidyverse)
+library(TRmaps)
+library(esquisse)
+```
+
+```{r}
+esquisser(sigorta_mv)
+
+library(ggplot2)
+
+ggplot(sigorta_mv) +
+ aes(x = cogunluk_parti_oran_2018, y = s_degisim17_18, colour = iktidar_2018) +
+ geom_point(shape = "circle", 
+ size = 1.85) +
+ geom_smooth(span = 0.95) +
+ scale_color_manual(values = c(`0` = "#A6CEE3", `1` = "#B15928"
+)) +
+ labs(x = "Oy Oranı", y = "2017'ye Göre Kamu Personeli Artışı Oranı", title = "2018 Yılında İllere Göre Kamu Personeli Artış Oranı ve Alınan Oy Oranı ", 
+ subtitle = "Veriler YSK ve SGK'den alınmıştır", color = "İktidar") +
+ theme_bw()
+```
+```{r}
+ggplot(sigorta_mv) +
+  aes(x = cogunluk_parti_oran_2018, y = s_degisim17_18) +
+  geom_point(shape = "circle", size = 1.5,aes(colour = iktidar_2018))
+```
+
+
+# plots
+```{r}
+ggplot(sigorta_mv,aes(x =cogunluk_parti_oran_2018, y = s_degisim17_18))+
+  geom_point(aes(color = as.factor(iktidar_2018)))+
+  geom_smooth(aes(color = as.factor(iktidar_2018)),method = "lm")+
+  scale_color_manual(values = c("red3","orange"))
+
+```
+
