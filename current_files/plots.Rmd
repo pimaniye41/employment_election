@@ -11,21 +11,29 @@ library(esquisse)
 ```
 
 ```{r}
-esquisser(sigorta_mv)
-
-library(ggplot2)
-
 ggplot(sigorta_mv) +
- aes(x = cogunluk_parti_oran_2018, y = s_degisim17_18, colour = iktidar_2018) +
+ aes(x = cogunluk_parti_oran_2018, y = s_degisim17_18, colour = cogunluk_parti_2018) +
  geom_point(shape = "circle", 
  size = 1.85) +
- geom_smooth(span = 0.95) +
- scale_color_manual(values = c(`0` = "#A6CEE3", `1` = "#B15928"
+ scale_color_manual(values = c("AK PARTİ" = "orange2", "CHP" = "red3","HDP"="purple3"
 )) +
  labs(x = "Oy Oranı", y = "2017'ye Göre Kamu Personeli Artışı Oranı", title = "2018 Yılında İllere Göre Kamu Personeli Artış Oranı ve Alınan Oy Oranı ", 
- subtitle = "Veriler YSK ve SGK'den alınmıştır", color = "İktidar") +
+ subtitle = "Veriler YSK ve SGK'den alınmıştır", color = "Çoğunluk Parti") +
  theme_bw()
+
+
+ggplot(sigorta_mv) +
+ aes(x = cogunluk_parti_oran_2015, y = s_degisim14_15, colour = cogunluk_parti_2015) +
+ geom_point(shape = "circle", 
+ size = 1.85) +
+ scale_color_manual(values = c("AK PARTİ" = "orange2", "CHP" = "red3","HDP"="purple3"
+))+
+  labs(x = "Oy Oranı", y = "2014'e Göre Kamu Personeli Artışı Oranı", title = "2015 Yılında İllere Göre Kamu Personeli Artış Oranı ve Alınan Oy Oranı ", 
+ subtitle = "Veriler YSK ve SGK'den alınmıştır", color = "Çoğunluk Parti") +
+ theme_bw()+
+  lims()
 ```
+
 ```{r}
 ggplot(sigorta_mv) +
   aes(x = cogunluk_parti_oran_2018, y = s_degisim17_18) +
