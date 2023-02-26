@@ -4,7 +4,7 @@ output: html_document
 date: "`r Sys.Date()`"
 ---
 # packages
-```{r}
+```{r,message=FALSE}
 library(tidyverse)
 library(TRmaps)
 library(esquisse)
@@ -47,6 +47,27 @@ ggplot(sigorta_mv,aes(x =cogunluk_parti_oran_2018, y = s_degisim17_18))+
   geom_point(aes(color = as.factor(iktidar_2018)))+
   geom_smooth(aes(color = as.factor(iktidar_2018)),method = "lm")+
   scale_color_manual(values = c("red3","orange"))
+```
+# harita üzerinde çalışmalar
+```{r}
+tr_nuts3 <- TRmaps::tr_nuts3
+tr_nuts3 <- rename(tr_nuts3,il_adi = name_tr)
+tr_nuts3 <- tr_nuts3 %>% 
+  arrange(il_adi)
+sigorta_mv <- sigorta_mv %>% 
+  arrange(il_adi)
+harita <- cbind(tr_nuts3,sigorta_mv)
+```
 
+
+```{r}
+ggplot(harita)+
+  geom_sf(aes(fill = cogunluk_parti_2018))+
+  theme(legend.position = "top",)+
+  scale_alpha_continuous(guide = F)+
+  scale_fill_manual(values = c("AK PARTİ" = "orange2", "CHP" = "red3","HDP"="purple3"))+
+  labs(fill = "Çoğunluk Parti",
+       alpha = "Kamu Sigortalı Çalışan Değişimi",
+       caption = "Koyu renkli illerde kamu sigortalı değişimi daha fazladır")
 ```
 
