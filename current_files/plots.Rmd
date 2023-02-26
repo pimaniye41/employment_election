@@ -62,12 +62,13 @@ harita <- cbind(tr_nuts3,sigorta_mv)
 
 ```{r}
 ggplot(harita)+
-  geom_sf(aes(fill = cogunluk_parti_2018))+
+  geom_sf(aes(fill = cogunluk_parti_2018,alpha=s_degisim17_18))+
   theme(legend.position = "top",)+
   scale_alpha_continuous(guide = F)+
   scale_fill_manual(values = c("AK PARTİ" = "orange2", "CHP" = "red3","HDP"="purple3"))+
   labs(fill = "Çoğunluk Parti",
        alpha = "Kamu Sigortalı Çalışan Değişimi",
-       caption = "Koyu renkli illerde kamu sigortalı değişimi daha fazladır")
+       caption = "Koyu renkli illerde kamu sigortalı değişimi daha fazladır")+
+  theme_minimal()
 ```
 
