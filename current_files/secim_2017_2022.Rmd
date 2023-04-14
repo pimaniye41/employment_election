@@ -1,0 +1,91 @@
+# Verileri düzenleme
+
+# paketler
+```{r,message=FALSE}
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(TRmaps)
+```
+
+# import
+```{r}
+sigortali <- read_excel(path = "data/kamu_sigortali.xlsx")
+mv_27 <- read_excel(path = "data/Yurt_ici_27.donem.xlsx")
+```
+
+# sigorta verisi düzenleme
+```{r}
+sigortali <- sigortali %>% 
+  pivot_longer(3:8,names_to = "sene",values_to = "kamu_sigortali") %>% 
+  mutate(`İl Adı` = stringr::str_to_lower(`İl Adı`)) %>%
+  group_by(Plaka) %>% 
+  mutate(endeks = kamu_sigortali/first(kamu_sigortali))
+
+colnames(sigortali) <- janitor::make_clean_names(colnames(sigortali))
+
+```
+
+# mv seçim verisi düzenleme
+```{r}
+colnames(mv_27) <- make_clean_names(colnames(mv_27))
+mv_27 <- mv_27 %>% 
+   mutate(il_adi = stringr::str_to_lower(il_adi))
+
+mv_table <- mv_27 %>% 
+  pivot_longer(3:13) %>% 
+  group_by(il_adi,plaka) %>% 
+  arrange(plaka,desc(value)) %>% 
+  summarise(toplam_oy = sum(value),
+            kazanan_parti = name[which.max(value)],
+            kazanan_oy = max(value),
+            oy_oran = kazanan_oy/toplam_oy,
+            iktidar = ifelse(kazanan_parti == "ak_parti",1,0),
+            ikinci_parti = name[2],
+            ikinci_oy = nth(value,2),
+            ikinci_oy_oran = nth(value/toplam_oy,2))
+```
+
+# table
+```{r}
+a <- full_join(mv_table,sigortali)
+a <- a %>% 
+  mutate(sene = paste(sene,"-01-01",sep = ""),
+         sene = as.Date(sene),
+         iktidar = as.factor(iktidar))
+```
+
+# graphing
+```{r}
+sehir_graf <- ggplot(a) +
+  aes(x = sene, y = endeks, colour = kazanan_parti, group = il_adi) +
+  geom_line(linewidth = 1)+
+  scale_color_manual(labels = c("AKP","CHP","HDP"),
+    values = c("orange","red2","purple3"))+
+  scale_x_date(date_breaks = "1 year",date_labels = "%Y")+
+  facet_wrap(~il_adi)+
+ theme(legend.position = "bottom", 
+ plot.title = element_text(hjust = 0,size = 14),
+ plot.caption  = element_text(size = 6,face = "plain"),
+ plot.subtitle = element_text(size = 10),
+ axis.text = element_text(size = 10, face = "plain"),
+ axis.text.x = element_text(angle = 90),
+ panel.background = element_rect(fill = "#EBF5FAB3",color = "#EBF5FAB3"),
+ plot.background = element_rect(fill =  "#EBF5FAB3",color = "#EBF5FAB3"),
+ legend.background = element_rect(fill =  "#EBF5FAB3",color = "#EBF5FAB3"),
+ legend.box.background = element_rect(fill = NA,color =NA),
+ legend.key = element_rect(fill = NA,color =NA),strip.background = element_rect(fill = NA))+
+  labs(title = "Kamu Sigortali Çalışan Değişimi",
+       subtitle = "27. Dönem Milletvekili Seçimlerinde En Çok Oyu Alan Partilere Göre",
+       color = "Çoğunluk Parti",
+      caption = "Veriler SGK ve YSK'den alınmıştır")
+
+#ggsave(plot = sehir_graf, filename = "~/R_files/employment_election/current_files/deneme.png",width = 15,height = 12)
+```
+
+# plot
+```{r,fig.width=15,fig.height=12}
+sehir_graf
+```
+
+
