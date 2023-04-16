@@ -1,0 +1,98 @@
+# 27. Dönem Seçimleri ve işsizlik
+
+# paketler
+
+```{r}
+library(tidyverse)
+library(readxl)
+```
+
+## verileri yükleme
+
+```{r}
+issizlik_26bolge <- read_excel("data/issizlik_26bolge.xlsx")
+Yurt_ici_27_donem <- read_excel("data/Yurt_ici_27.donem.xlsx")
+bolge <- read_excel("data/ibbs2_bolgeler.xlsx")
+
+```
+
+## illeri ve bölgeleri esleme
+
+```{r}
+bolge <- bolge %>% 
+  pivot_longer(2:ncol(bolge)) %>% 
+  filter(!is.na(value)) %>% 
+  select(ibss2,value) %>% 
+  rename("İl Adı" = "value")
+
+mv_27_bolge <- full_join(bolge,Yurt_ici_27_donem)
+
+mv_27_ibbs <- mv_27_bolge %>% 
+  select(!Plaka) %>% 
+  pivot_longer(3:13) %>% 
+  group_by(ibss2) %>% 
+  arrange(ibss2,desc(value)) %>% 
+  summarise(toplam_oy = sum(value),
+            cogunluk_parti= name[which.max(value)],
+            cogunluk_oy = sum(value[name == cogunluk_parti]),
+            cogunluk_oran = cogunluk_oy/toplam_oy,
+            )
+mv_27_ibbs <- mv_27_ibbs %>% 
+  rename("ibbs2" = "ibss2")
+
+```
+
+## issizlik verisi düzenleme
+
+```{r}
+issizlik <- issizlik_26bolge %>% 
+  pivot_longer(3:8,names_to = "sene",values_to = "issizlik_oran")
+```
+
+## secim ve issizlik birlestirme
+
+```{r}
+issizlik_mv <- full_join(issizlik,mv_27_ibbs)
+issizlik_mv <- issizlik_mv %>% 
+  mutate(sene = paste(sene, "-01-01",sep = ""),
+         sene = as.Date(sene))
+
+```
+
+## Grafik
+
+```{r}
+a <- ggplot(issizlik_mv) +
+  aes(x = sene, y = issizlik_oran, colour = cogunluk_parti, group = ibbs2) +
+  geom_line(linewidth = 1)+
+  scale_color_manual(labels = c("AKP","CHP","HDP"),
+    values = c("orange","red2","purple3"))+
+  scale_x_date(date_breaks = "1 year",date_labels = "%Y")+
+  facet_wrap(~bolge,ncol = 5)+
+ theme(legend.position = "bottom", 
+ plot.title = element_text(hjust = 0,size = 16,face = "bold"),
+ plot.caption  = element_text(size = 10,face = "plain"),
+ plot.subtitle = element_text(size = 14),
+ axis.text = element_text(size = 14, face = "plain"),
+ axis.text.x = element_text(angle = 90),
+ axis.title = element_text(size = 15),
+ panel.background = element_rect(fill = "#EBF5FAB3",color = "#EBF5FAB3"),
+ legend.title = element_text(size = 15),
+ legend.text = element_text(size = 14),
+ plot.background = element_rect(fill =  "#EBF5FAB3",color = "#EBF5FAB3"),
+ legend.background = element_rect(fill =  "#EBF5FAB3",color = "#EBF5FAB3"),
+ legend.box.background = element_rect(fill = NA,color =NA),
+ legend.key = element_rect(fill = NA,color =NA),
+ strip.background = element_rect(fill = NA),
+ strip.text = element_text(size = 9))+
+  labs(title = "27. Dönem Milletvekili Seçimlerinde Bölgede Çoğunluk Partiye Göre İşsizlik Oranı Değişimi",
+       subtitle = "TÜİK İBBS2 26 Bölge, 15-64 Yaş",
+       color = "Çoğunluk Parti",
+      caption = "Veriler TÜİK ve YSK'den alınmıştır",
+      x = "Sene",y = "İşsizlik Oranı")
+```
+
+```{r,fig.height=12,fig.width=15,echo=FALSE}
+#ggsave(plot = a,filename = "~/R_files/employment_election/current_files/issizlik_26_bolge.png",width = 15,height = 12)
+a
+```
